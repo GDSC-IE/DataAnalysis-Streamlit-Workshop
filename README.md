@@ -24,6 +24,11 @@ pip install -r requirements.txt --user
 streamlit --version
 ```
 
+## Run the app
+```
+streamlit run front_flash.py
+```
+
 
 ## What's left:
 

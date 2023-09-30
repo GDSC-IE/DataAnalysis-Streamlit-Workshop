@@ -29,6 +29,7 @@ streamlit --version
 streamlit run front_flash.py
 ```
 
+Now the application must be running on your localhost.
 
 ## What's left:
 

@@ -21,7 +21,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 # Click on the link
 # After each modification, simply refresh the page on your web browser
 
-
+# Set up OpenAI API key
+st.sidebar.header("OpenAI API")
+api_key = st.sidebar.text_input("Enter your OpenAI API key")
 
 def get_file_icon(file_extension):
     # Replace this with the appropriate icons for different file types
@@ -101,7 +103,7 @@ def context_doc(uploaded_docs, chunk_size):
     return generated_flashcards
 
 # Initialize OpenAI API with your key
-openai.api_key = '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'
+openai.api_key = api_key
 st.session_state.process_pdf = False
 
 # Title (Must change the title)

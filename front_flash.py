@@ -6,6 +6,7 @@ import tempfile
 import streamlit as st
 from streamlit_option_menu import option_menu
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import re
 
 
 #Start by creating a venv:
@@ -21,27 +22,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 # Click on the link
 # After each modification, simply refresh the page on your web browser
 
-
-#Armand's api key: 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
-
-
-def get_file_icon(file_extension):
-    # Replace this with the appropriate icons for different file types
-    icon_mapping = {
-        ".txt": "📄",
-        ".csv": "📄",
-        ".png": "🖼️",
-        ".jpg": "🖼️",
-        ".jpeg": "🖼️",
-        ".pdf": "📄",
-        ".eml": "📨"
-        # Add more file types and their corresponding icons as needed
-    }
-    return icon_mapping.get(file_extension, "📄")
-
-def caching(caching_docs):
-    return caching_docs
-
 def context_doc(uploaded_docs, chunk_size, flashcard_number):
 
     def read_pdf(pdf_docs):
@@ -55,7 +35,7 @@ def context_doc(uploaded_docs, chunk_size, flashcard_number):
         for pdf_path in pdf_paths:
             loader = PyPDFLoader(pdf_path)
             pages = loader.load_and_split()
-            return pages
+        return pages
 
     def split_chunks(sources, chunk_size):
         chunks = []
@@ -66,67 +46,81 @@ def context_doc(uploaded_docs, chunk_size, flashcard_number):
         print(chunks)
         return chunks
 
-    def extract_clear_text(text):
+    def extract_clear_text(source):
+
+        for i, text in enumerate(source):
         # Remove page numbers
-        text = re.sub(r'\n\d+\s', '\n', text)
+            text = re.sub(r'\n\d+\s', '\n', text.page_content)
 
-        # Remove unwanted characters and multiple spaces
-        text = re.sub(r'[^\w\s.]', '', text)
-        text = re.sub(r'\s+', ' ', text)
+            # Remove unwanted characters and multiple spaces
+            text = re.sub(r'[^\w\s.]', '', text)
+            text = re.sub(r'\s+', ' ', text)
 
-        # Remove trailing and leading spaces
-        text = text.strip()
+            # Remove trailing and leading spaces
+            text = text.strip()
 
         return text
 
-
     # Create Anki cards
-    def create_anki_cards(content, chunk_size):
+    def create_anki_cards(content):
 
-        divided_sections = split_chunks(content, chunk_size)
+        # divided_sections = split_chunks(content, chunk_size)
 
         # text = divided_sections[0]
         generated_flashcards = ' '
-        for i, text in enumerate(divided_sections):
 
-            ## You might need to change the Prompt to get consistent format. (Must do a bit of prompt engineering)
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user",
-                 "content": f"Create {flashcard_number} anki flashcards with the provided text using a format: question;answer next line question;answer etc. Keep question and the corresponding answer on the same line. For each question you should mention the concept or topic related. {text}"}
-            ]
+        # You might need to change the Prompt to get consistent format. (Must do a bit of prompt engineering)
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user",
+             "content": f"Create {flashcard_number} anki flashcards with the provided text using a format: question;answer next line question;answer new line etc. Keep question and the corresponding answer on the same line. But each pair of questions and answers should be on different lines. {content}"}
+        ]
 
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                temperature=0.2,
-                max_tokens=2048 #Defines the limit of token per search
-            )
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.3,
+            max_tokens=2048  # Defines the limit of token per search
+        )
 
-            response_from_api = response['choices'][0]['message']['content']  # .strip()
-            generated_flashcards += response_from_api
+        # .strip()
+        response_from_api = response['choices'][0]['message']['content']
+        generated_flashcards += response_from_api
 
         return generated_flashcards
+
+    def anki_flashcards_to_list(flashcards):
+        flashcard_qa = flashcards.split('\n')
+        flashcard_list = []
+        for card in flashcard_qa:
+            question, answer = card.split(';')
+            flashcard_list.append((question.strip(), answer.strip()))
+        print("\n\nFlashcard List", flashcard_list)
+        return flashcard_list
 
 
     pdf_text = read_pdf(uploaded_docs)
 
     clear_pdf = extract_clear_text(pdf_text)
 
-    generated_flashcards = create_anki_cards(pdf_text, chunk_size)
+    generated_flashcards_anki = create_anki_cards(clear_pdf)
 
-    return generated_flashcards
+    generated_flashcards_list = anki_flashcards_to_list(
+        generated_flashcards_anki)
 
-# Initialize OpenAI API with your key
-openai.api_key = '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'
+    if 'flashcards_list' not in st.session_state:
+        st.session_state.flashcards_list = generated_flashcards_list.copy()
+
+    return generated_flashcards_anki, generated_flashcards_list
+
 st.session_state.process_pdf = False
 
 # Title (Must change the title)
-st.markdown("<p style='font-size: 30px;'>Unleash the Power of GPT for Document Inquiries 📚</p>", unsafe_allow_html=True)
+st.markdown("<p style='font-size: 30px;'>Unleash the Power of GPT for Document Inquiries 📚</p>",
+            unsafe_allow_html=True)
 
 
 with st.sidebar:
-
     # Set up OpenAI API key
     st.sidebar.header("OpenAI API")
     api_key = st.sidebar.text_input("Enter your OpenAI API key")
@@ -146,9 +140,9 @@ with st.sidebar:
     if st.session_state.uploaded_docs:
         # Hide the default file uploader messages
         st.markdown('''
-                <style>
-                    .uploadedFile {display: none}
-                <style>''',
+                  <style>
+                      .uploadedFile {display: none}
+                  <style>''',
                     unsafe_allow_html=True)
 
         # Display checkboxes to select PDFs for processing
@@ -157,14 +151,14 @@ with st.sidebar:
             file_size = len(uploaded_file.getvalue())
             file_extension = os.path.splitext(file_name)[1]
 
-            keep_file = st.checkbox(f"{file_name} ({get_file_icon(file_extension)}) - {file_size} bytes",
+            keep_file = st.checkbox(f"{file_name} - {file_size} bytes",
                                     value=True)
             keep_file_list.append(keep_file)
 
         # Cache selected PDFs
-        uploaded_docs = [file for file, keep in zip(st.session_state.uploaded_docs, keep_file_list) if keep]
-        uploaded_docs_cached = caching(uploaded_docs)
-        st.session_state.pdf_docs_cached = uploaded_docs_cached
+        uploaded_docs = [file for file, keep in zip(
+            st.session_state.uploaded_docs, keep_file_list) if keep]
+        st.session_state.uploaded_docs = uploaded_docs
 
         # Set the chunk size for document processing
         chunk_size = st.slider('Chunk size:',
@@ -175,14 +169,16 @@ with st.sidebar:
         col1, col2 = st.columns([1, 2])
         process_pdf = col1.button("Process")
         if process_pdf and not st.session_state.uploaded_docs:
-            col2.markdown('<p style="color:red; font-weight:bold;">No document</p>', unsafe_allow_html=True)
+            col2.markdown(
+                '<p style="color:red; font-weight:bold;">No document</p>', unsafe_allow_html=True)
         elif process_pdf:
             st.session_state.process_pdf = True
 
-
-    #Add a new if statement
-    if st.session_state.process_pdf and st.session_state.pdf_docs_cached:
-        st.session_state.context = context_doc(st.session_state.pdf_docs_cached, chunk_size, st.session_state.flashcard_number)
+    # Add a new if statement
+    if st.session_state.process_pdf and st.session_state.uploaded_docs and "flashcards_list" not in st.session_state:
+        print("#####context_doc here######")
+        st.session_state.context, st.session_state.flashcards_list = context_doc(
+            st.session_state.uploaded_docs, chunk_size, st.session_state.flashcard_number)
 
 # Create a sidebar (must add icons
 type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"],
@@ -190,10 +186,8 @@ type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"],
                         menu_icon="cast", default_index=0, orientation="horizontal")
 
 if type == "FLASHCARDS":
-    #Add space
-    st.write("")
 
-    if "context" not in st.session_state:
+    if "context" not in st.session_state or "flashcards_list" not in st.session_state:
         st.subheader(f"Generate first your flashcards")
     else:
         # Function to display and edit a box of question and answer
@@ -205,20 +199,12 @@ if type == "FLASHCARDS":
                 label="Answer", value=a, key=f"answer_{index}")
             return question, answer
 
-        if "edited_flashcards" not in st.session_state:
-            st.session_state.edited_flashcards = {
-                "What is 2 + 2?": "4",
-                "What is the capital of France?": "Paris",
-                "What is the largest planet in our solar system?": "Jupiter"
-            }
-
-        if 'edited_flashcards' in st.session_state:
-            # Display and edit all boxes
-            for i, (question, answer) in enumerate(st.session_state.edited_flashcards.copy().items()):
-                edited_q, edited_a = display_qna_box(question, answer, i)
-                if edited_q != question or edited_a != answer:
-                    del st.session_state.edited_flashcards[question]
-                    st.session_state.edited_flashcards[edited_q] = edited_a
+        # Display and edit all boxes
+        for index in range(len(st.session_state.flashcards_list)):
+            question, answer = st.session_state.flashcards_list[index]
+            edited_q, edited_a = display_qna_box(question, answer, index)
+            if edited_q != question or edited_a != answer:
+                st.session_state.flashcards_list[index] = (edited_q, edited_a)
 
 
 if type == "DOWNLOAD":
@@ -226,15 +212,20 @@ if type == "DOWNLOAD":
     if "string_edited_flashcards" not in st.session_state:
         st.session_state.string_edited_flashcards = ""
 
-    # Transform the dictionary into a list of key-value pairs and iterate through it
-    for key, value in st.session_state.edited_flashcards.items():
-        st.session_state.string_edited_flashcards += ', '.join([f"{key}: {value}"])
-        st.session_state.string_edited_flashcards += "\n"
+    if "flashcards_list" in st.session_state:
+        # Transform the dictionary into a list of key-value pairs and iterate through it
+        for (key, value) in st.session_state.flashcards_list:
+            st.session_state.string_edited_flashcards += ', '.join(
+                [f"{key}: {value}"])
+            st.session_state.string_edited_flashcards += "\n"
 
-    if ':' in st.session_state.string_edited_flashcards:
-        st.session_state.string_edited_flashcards = st.session_state.string_edited_flashcards.replace(':', ';')
+        if ':' in st.session_state.string_edited_flashcards:
+            st.session_state.string_edited_flashcards = st.session_state.string_edited_flashcards.replace(
+                ':', ';')
 
-    #Initialize for the moment
-    st.download_button('Download Flashcards', st.session_state.string_edited_flashcards, 'my_flashcards.txt')
-
+        # Initialize for the moment
+        st.download_button('Download Flashcards',
+                           st.session_state.string_edited_flashcards, 'my_flashcards.txt')
+    else:
+        st.subheader(f"Generate first your flashcards")
 

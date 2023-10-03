@@ -160,12 +160,6 @@ with st.sidebar:
             st.session_state.uploaded_docs, keep_file_list) if keep]
         st.session_state.uploaded_docs = uploaded_docs
 
-        # Set the chunk size for document processing
-        chunk_size = st.slider('Chunk size:',
-                               min_value=500,
-                               max_value=4500,
-                               step=100)
-
         col1, col2 = st.columns([1, 2])
         process_pdf = col1.button("Process")
         if process_pdf and not st.session_state.uploaded_docs:

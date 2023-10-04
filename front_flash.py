@@ -5,7 +5,6 @@ import os
 import tempfile
 import streamlit as st
 from streamlit_option_menu import option_menu
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 import re
 
 
@@ -36,15 +35,6 @@ def context_doc(uploaded_docs, chunk_size, flashcard_number):
             loader = PyPDFLoader(pdf_path)
             pages = loader.load_and_split()
         return pages
-
-    def split_chunks(sources, chunk_size):
-        chunks = []
-        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_size / 10)
-        for chunk in splitter.split_documents(sources):
-            chunks.append(chunk)
-
-        print(chunks)
-        return chunks
 
     def extract_clear_text(source):
 

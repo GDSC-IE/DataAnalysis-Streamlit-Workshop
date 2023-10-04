@@ -51,10 +51,10 @@ def create_anki_cards(content):
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user",
-         "content": f"Create {flashcard_number} anki flashcards with the provided text using a format: 
+         "content": f"""Create {flashcard_number} anki flashcards with the provided text using a format: 
          question;answer next line question;answer new line etc. 
          Keep question and the corresponding answer on the same line. 
-         But each pair of questions and answers should be on different lines. {content}"}
+         But each pair of questions and answers should be on different lines. {content}"""}
     ]
     response = openai.ChatCompletion.create(
         model="gpt-4",
@@ -134,7 +134,7 @@ with st.sidebar:
         st.session_state.flashcards_list = anki_flashcards_to_list(generated_flashcards_anki)
 
 # Create a sidebar
-type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"], default_index="FLASHCARDS", orientation="horizontal")
+type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"], default_index=0, orientation="horizontal")
 
 if type == "FLASHCARDS":
     if "context" not in st.session_state or "flashcards_list" not in st.session_state:

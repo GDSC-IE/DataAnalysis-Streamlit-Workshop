@@ -51,7 +51,7 @@ def create_anki_cards(content):
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user",
-         "content": f"""Create {flashcard_number} anki flashcards with the provided text using a format: 
+         "content": f"""Create {st.session_state.flashcard_number} anki flashcards with the provided text using a format: 
          question;answer next line question;answer new line etc. 
          Keep question and the corresponding answer on the same line. 
          But each pair of questions and answers should be on different lines. {content}"""}
@@ -130,14 +130,14 @@ with st.sidebar:
     if st.session_state.process_pdf and st.session_state.uploaded_docs and "flashcards_list" not in st.session_state:
         pdf_text = read_pdf(uploaded_docs)
         clear_pdf = extract_clear_text(pdf_text)
-        st.session_state.context = create_anki_cards(clear_pdf)
+        generated_flashcards_anki = create_anki_cards(clear_pdf)
         st.session_state.flashcards_list = anki_flashcards_to_list(generated_flashcards_anki)
 
 # Create a sidebar
-type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"], default_index=0, orientation="horizontal")
+type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"], icons=[], default_index=0, orientation="horizontal")
 
 if type == "FLASHCARDS":
-    if "context" not in st.session_state or "flashcards_list" not in st.session_state:
+    if "flashcards_list" not in st.session_state:
         st.subheader(f"Generate first your flashcards")
     else:
         # Function to display and edit a box of question and answer

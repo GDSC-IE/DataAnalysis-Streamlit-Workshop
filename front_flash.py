@@ -77,23 +77,23 @@ def anki_flashcards_to_list(flashcards):
 
 st.session_state.process_pdf = False
 
-# Title (Must change the title)
-st.markdown("<p style='font-size: 30px;'>Unleash the Power of GPT for Document Inquiries 📚</p>",
-            unsafe_allow_html=True)
+# Title
+st.title("Flashcards generator")
 
 with st.sidebar:
     # Set up OpenAI API key
     st.sidebar.header("OpenAI API")
-    api_key = st.sidebar.text_input("Enter your OpenAI API key")
+    # Add a user input 
+    api_key = ""
     # Initialize OpenAI API with your key
     openai.api_key = api_key
     # Set up the number of flashcards to generate
     st.sidebar.header("Number of Flashcards")
-    st.session_state.flashcard_number = st.sidebar.number_input(
-        "Number of flashcards to generate", min_value=1, max_value=15, value=5, step=1)
+    # Add a user input
+    st.session_state.flashcard_number = ""
     st.subheader("Your documents")
-    st.session_state.uploaded_docs = st.file_uploader(
-        "Upload your PDFs here and click on 'Process'", accept_multiple_files=True, type=["pdf"])
+    # Add a user input
+    st.session_state.uploaded_docs = ""
     
     keep_file_list = []
     if st.session_state.uploaded_docs:
@@ -118,7 +118,8 @@ with st.sidebar:
             st.session_state.uploaded_docs, keep_file_list) if keep]
         st.session_state.uploaded_docs = uploaded_docs
 
-        col1, col2 = st.columns([1, 2])
+        # Create 2 columns
+        col1, col2 = ""
         process_pdf = col1.button("Process")
         if process_pdf and not st.session_state.uploaded_docs:
             col2.markdown(
@@ -128,10 +129,12 @@ with st.sidebar:
 
     # Add a new if statement
     if st.session_state.process_pdf and st.session_state.uploaded_docs and "flashcards_list" not in st.session_state:
-        pdf_text = read_pdf(uploaded_docs)
-        clear_pdf = extract_clear_text(pdf_text)
-        generated_flashcards_anki = create_anki_cards(clear_pdf)
-        st.session_state.flashcards_list = anki_flashcards_to_list(generated_flashcards_anki)
+        #Call the back-end functions in the right order and assign it to the appropriate variable
+        st.session_state.flashcards_list = ""
+        pdf_text = ""
+        generated_flashcards_anki = ""
+        clear_pdf = ""
+
 
 # Create a sidebar
 type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"], icons=[], default_index=0, orientation="horizontal")
@@ -170,8 +173,8 @@ if type == "DOWNLOAD":
                 ':', ';')
 
         # Initialize for the moment
-        st.download_button('Download Flashcards',
-                           st.session_state.string_edited_flashcards, 'my_flashcards.txt')
+        # Add a download button that exports the following variable: st.session_state.string_edited_flashcards
+    
     else:
         st.subheader(f"Generate first your flashcards")
 

@@ -104,16 +104,14 @@ with st.sidebar:
     api_key = st.sidebar.text_input("Enter your OpenAI API key")
     # Initialize OpenAI API with your key
     openai.api_key = api_key
-
     # Set up the number of flashcards to generate
     st.sidebar.header("Number of Flashcards")
     st.session_state.flashcard_number = st.sidebar.number_input(
         "Number of flashcards to generate", min_value=1, max_value=15, value=5, step=1)
-
     st.subheader("Your documents")
     st.session_state.uploaded_docs = st.file_uploader(
         "Upload your PDFs here and click on 'Process'", accept_multiple_files=True, type=["pdf"])
-
+    
     keep_file_list = []
     if st.session_state.uploaded_docs:
         # Hide the default file uploader messages

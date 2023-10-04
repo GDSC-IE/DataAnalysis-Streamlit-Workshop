@@ -21,7 +21,7 @@ import re
 # Click on the link
 # After each modification, simply refresh the page on your web browser
 
-def context_doc(uploaded_docs, chunk_size, flashcard_number):
+def context_doc(uploaded_docs, flashcard_number):
 
     def read_pdf(pdf_docs):
         temp_dir = tempfile.TemporaryDirectory()
@@ -120,7 +120,6 @@ with st.sidebar:
                       .uploadedFile {display: none}
                   <style>''',
                     unsafe_allow_html=True)
-
         # Display checkboxes to select PDFs for processing
         for uploaded_file in st.session_state.uploaded_docs:
             file_name = uploaded_file.name
@@ -131,16 +130,10 @@ with st.sidebar:
                                     value=True)
             keep_file_list.append(keep_file)
 
-        # Cache selected PDFs
+        # Combines PDF
         uploaded_docs = [file for file, keep in zip(
             st.session_state.uploaded_docs, keep_file_list) if keep]
         st.session_state.uploaded_docs = uploaded_docs
-
-        # Set the chunk size for document processing
-        chunk_size = st.slider('Chunk size:',
-                               min_value=500,
-                               max_value=4500,
-                               step=100)
 
         col1, col2 = st.columns([1, 2])
         process_pdf = col1.button("Process")
@@ -152,17 +145,15 @@ with st.sidebar:
 
     # Add a new if statement
     if st.session_state.process_pdf and st.session_state.uploaded_docs and "flashcards_list" not in st.session_state:
-        print("#####context_doc here######")
-        st.session_state.context, st.session_state.flashcards_list = context_doc(
-            st.session_state.uploaded_docs, chunk_size, st.session_state.flashcard_number)
+        pdf_text = read_pdf(uploaded_docs)
+        clear_pdf = extract_clear_text(pdf_text)
+        st.session_state.context = create_anki_cards(clear_pdf)
+        st.session_state.flashcards_list = anki_flashcards_to_list(generated_flashcards_anki)
 
-# Create a sidebar (must add icons
-type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"],
-                        icons=[],
-                        menu_icon="cast", default_index=0, orientation="horizontal")
+# Create a sidebar
+type = option_menu(None, ["FLASHCARDS", "DOWNLOAD"], default_index="FLASHCARDS", orientation="horizontal")
 
 if type == "FLASHCARDS":
-
     if "context" not in st.session_state or "flashcards_list" not in st.session_state:
         st.subheader(f"Generate first your flashcards")
     else:
@@ -174,7 +165,6 @@ if type == "FLASHCARDS":
             answer = st.text_area(
                 label="Answer", value=a, key=f"answer_{index}")
             return question, answer
-
         # Display and edit all boxes
         for index in range(len(st.session_state.flashcards_list)):
             question, answer = st.session_state.flashcards_list[index]
@@ -184,7 +174,6 @@ if type == "FLASHCARDS":
 
 
 if type == "DOWNLOAD":
-
     if "flashcards_list" in st.session_state and "string_edited_flashcards" not in st.session_state:
         st.session_state.string_edited_flashcards = ""
         # Transform the dictionary into a list of key-value pairs and iterate through it

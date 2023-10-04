@@ -37,46 +37,35 @@ def context_doc(uploaded_docs, chunk_size, flashcard_number):
         return pages
 
     def extract_clear_text(source):
-
         for i, text in enumerate(source):
-        # Remove page numbers
+            # Remove page numbers
             text = re.sub(r'\n\d+\s', '\n', text.page_content)
-
             # Remove unwanted characters and multiple spaces
             text = re.sub(r'[^\w\s.]', '', text)
             text = re.sub(r'\s+', ' ', text)
-
             # Remove trailing and leading spaces
             text = text.strip()
-
         return text
 
     # Create Anki cards
     def create_anki_cards(content):
-
-        # divided_sections = split_chunks(content, chunk_size)
-
-        # text = divided_sections[0]
         generated_flashcards = ' '
-
-        # You might need to change the Prompt to get consistent format. (Must do a bit of prompt engineering)
         messages = [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user",
-             "content": f"Create {flashcard_number} anki flashcards with the provided text using a format: question;answer next line question;answer new line etc. Keep question and the corresponding answer on the same line. But each pair of questions and answers should be on different lines. {content}"}
+             "content": f"Create {flashcard_number} anki flashcards with the provided text using a format: 
+             question;answer next line question;answer new line etc. 
+             Keep question and the corresponding answer on the same line. 
+             But each pair of questions and answers should be on different lines. {content}"}
         ]
-
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=messages,
             temperature=0.3,
-            max_tokens=2048  # Defines the limit of token per search
+            max_tokens=2048 
         )
-
-        # .strip()
         response_from_api = response['choices'][0]['message']['content']
         generated_flashcards += response_from_api
-
         return generated_flashcards
 
     def anki_flashcards_to_list(flashcards):
@@ -95,8 +84,7 @@ def context_doc(uploaded_docs, chunk_size, flashcard_number):
 
     generated_flashcards_anki = create_anki_cards(clear_pdf)
 
-    generated_flashcards_list = anki_flashcards_to_list(
-        generated_flashcards_anki)
+    generated_flashcards_list = anki_flashcards_to_list(generated_flashcards_anki)
 
     if 'flashcards_list' not in st.session_state:
         st.session_state.flashcards_list = generated_flashcards_list.copy()
